@@ -1,0 +1,25 @@
+{
+  "name": "Bike Part-Time Profit Tracker",
+  "short_name": "Bike Profit",
+  "description": "Track bike part-time rides, income, fuel, commission and profit.",
+  "start_url": "./Bike_Part_Time_Profit_Tracker_PWA.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#071117",
+  "theme_color": "#071117",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

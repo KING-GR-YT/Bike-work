@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bike Part-Time Profit Tracker</title>
+<style>
+/* ===== FUTURISTIC NEON DASHBOARD — CSS ONLY ===== */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Rajdhani:wght@500;600;700&display=swap');
+
+:root{
+  --bg:#071117;
+  --card:#121d24;
+  --card2:#16262e;
+  --text:#edf9fb;
+  --muted:#91a5aa;
+  --line:rgba(0,239,255,.28);
+  --cyan:#00efff;
+  --green:#00ff9d;
+  --red:#ff4048;
+  --yellow:#ffbd00;
+  --blue:#00b9d4;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:'Rajdhani',Arial,Helvetica,sans-serif;
+  background:
+    radial-gradient(circle at 50% -12%,rgba(0,239,255,.12),transparent 38%),
+    linear-gradient(180deg,#09161c 0%,#050c11 100%);
+  color:var(--text);
+}
+
+.container{
+  max-width:1500px;
+  margin:24px auto;
+  padding:18px;
+}
+
+h1{
+  margin:0 0 22px;
+  padding:5px 4px 14px;
+  text-align:left;
+  font-family:'Orbitron',monospace;
+  font-size:34px;
+  letter-spacing:1px;
+  color:var(--cyan);
+  border-bottom:1px solid rgba(0,239,255,.25);
+}
+
+h1::before{
+  content:'⚡ ';
+  color:#ffe600;
+  text-shadow:0 0 12px rgba(255,230,0,.8);
+}
+
+h2{
+  margin:0 0 15px;
+  font-family:'Orbitron',monospace;
+  font-size:20px;
+  color:var(--cyan);
+  text-shadow:0 0 8px rgba(0,239,255,.32);
+}
+
+.card{
+  background:linear-gradient(145deg,#17272f,#101a21);
+  border:1px solid var(--line);
+  border-radius:17px;
+  padding:20px;
+  margin-bottom:18px;
+  
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(0px,1fr));
+  gap:13px;
+}
+
+label{
+  font-size:13px;
+  color:#a8bdc2;
+  display:block;
+  margin-bottom:6px;
+  font-weight:600;
+}
+
+input,select,button{
+  width:100%;
+  padding:11px 12px;
+  border:1px solid rgba(0,239,255,.35);
+  border-radius:11px;
+  font-size:14px;
+  font-family:'Rajdhani',Arial,Helvetica,sans-serif;
+  background:#0b161c;
+  color:#eef9fb;
+  outline:none;
+  transition:.2s ease;
+}
+
+input:focus,select:focus{
+  border-color:var(--cyan);
+  box-shadow:0 0 12px rgba(0,239,255,.22);
+}
+
+input::placeholder{color:#647b82}
+
+button{
+  cursor:pointer;
+  border:none;
+  background:linear-gradient(135deg,#007f91,#00c6d8);
+  color:#031116;
+  font-family:'Orbitron',monospace;
+  font-weight:700;
+  
+}
+
+button:hover{box-shadow:0 0 18px rgba(0,239,255,.32);transform:translateY(-1px)}
+button.secondary{background:linear-gradient(135deg,#3a4e58,#566b74);color:#fff}
+button.danger{background:linear-gradient(135deg,#941821,#ff4048);color:#fff}
+button.success{background:linear-gradient(135deg,#009b68,#00e991);color:#03130d}
+
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+
+.actions button{width:auto;min-width:175px}
+
+.table-wrap{
+  width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  border-radius:10px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:rgba(4,11,15,.25);
+}
+
+th,td{
+  border-bottom:1px solid rgba(0,239,255,.12);
+  padding:11px 8px;
+  text-align:center;
+  font-size:18px;
+}
+
+th{
+  color:var(--yellow);
+  background:rgba(255,255,255,.025);
+  font-family:'Orbitron',monospace;
+  font-size:18px;
+  white-space:nowrap;
+  text-align: center;
+}
+
+tbody tr:hover{background:rgba(0,239,255,.035)}
+
+.summary{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(120px,1fr));
+  gap:12px;
+  margin:16px;
+}
+
+.summary .item{
+  background:linear-gradient(145deg,#16262e,#101a21);
+  border:1px solid rgba(0,239,255,.25);
+  border-radius:14px;
+  padding:14px;
+}
+
+.summary .label{
+  color:var(--cyan);
+  font-family:'Orbitron',monospace;
+  font-size:11px;
+  margin-bottom:6px;
+}
+
+.summary .value{
+  color:#f2ffff;
+  font-family:'Orbitron',monospace;
+  font-size:20px;
+  font-weight:700;
+}
+
+.profit{color:var(--green)!important}
+.loss{color:var(--red)!important}
+
+.row-actions{display:flex;gap:6px}
+.row-actions button{padding:8px 10px;font-size:12px;border-radius:9px;min-width:62px}
+
+.footer{text-align:center;color:#70878e;font-size:12px;margin:20px}
+
+@media (max-width:1100px){
+  .summary{grid-template-columns:repeat(4,minmax(145px,1fr))}
+}
+
+@media (max-width:900px){
+  .summary{
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    gap:12px;
+    padding-bottom:6px;
+  }
+  .summary .item{min-width:155px;flex:0 0 auto}
+}
+
+@media (max-width:640px){
+  body{padding:0}
+  .container{margin:0;padding:12px}
+  h1{font-size:24px;line-height:1.35}
+  h2{font-size:18px;margin:0 0 12px}
+  .card{padding:14px;border-radius:14px}
+  .grid{grid-template-columns:1fr}
+  input,select,button{font-size:16px;padding:12px}
+  .actions{flex-direction:column}
+  .actions button{width:100%;min-width:0}
+  table{min-width:760px}
+  th,td{white-space:nowrap;font-size:13px}
+  .summary .item{min-width:155px}
+}
+</style>
+
+<meta name="theme-color" content="#2563eb" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<link rel="manifest" href="manifest.json" />
+
+</head>
+<body>
+<div class="container">
+  <h1>Bike Part-Time Profit Tracker</h1><div class="dashboard-accent"></div>
+
+  <div class="card">
+    <h2>Monthly Report</h2>
+    
+    <div class="summary">
+      <div class="item">
+        <div class="label">Net Profit %</div>
+        <div class="value profit" id="netProfitPercent">0%</div>
+      </div>
+      <div class="item">
+        <div class="label">Net Profit</div>
+        <div class="value profit" id="netProfit">₹0</div>
+      </div>
+      <div class="item">
+        <div class="label">Total Income</div>
+        <div class="value" id="totalIncome">₹0</div>
+      </div>
+      <div class="item">
+        <div class="label">Fuel Expense</div>
+        <div class="value" id="totalFuel">₹0</div>
+      </div>
+      <div class="item">
+        <div class="label">Commission</div>
+        <div class="value" id="totalOther">₹0</div>
+      </div>
+      <div class="item">
+        <div class="label">Total Expenses</div>
+        <div class="value" id="totalExpense">₹0</div>
+      </div>
+      <div class="item">
+        <div class="label">Total KM</div>
+        <div class="value" id="totalDistance">0 KM</div>
+      </div>
+    </div>
+
+          <div class="grid">
+      <div>
+        <select id="yearFilter"></select>
+      </div>
+      <div>
+        <select id="monthFilter">
+          <option value="all">All Months</option>
+          <option value="0">January</option>
+          <option value="1">February</option>
+          <option value="2">March</option>
+          <option value="3">April</option>
+          <option value="4">May</option>
+          <option value="5">June</option>
+          <option value="6">July</option>
+          <option value="7">August</option>
+          <option value="8">September</option>
+          <option value="9">October</option>
+          <option value="10">November</option>
+          <option value="11">December</option>
+        </select>
+      </div>
+
+      <div>
+      <button id="exportBtn">Export Monthly Report (CSV)</button>
+    </div>
+    </div>
+  </div>
+
+<div class="card">
+    <h2>Entry</h2>
+    <div class="grid">
+      <div>
+        <label>Date</label> 
+        <input type="date" id="date">
+      </div>
+      <div>
+        <label>Platform</label>
+        <select id="platform">
+          <option>Rapido</option>
+          <option>InDrive</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label>Distance (KM)</label>
+        <input type="number" id="distance" placeholder="0">
+      </div>
+      <div>
+        <label>Income (₹)</label>
+        <input type="number" id="income" placeholder="0">
+      </div>
+      <div>
+        <label>Fuel Expense (₹)</label>
+        <input type="number" id="fuel" placeholder="0">
+      </div>
+      <div>
+        <label>Commission (₹)</label>
+        <input type="number" id="other" placeholder="0">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="success" id="saveBtn">Save Record</button>
+      <button class="secondary" id="clearBtn" type="button">Clear</button>
+    </div>
+  </div>
+      <div class="card">
+      <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Platform</th>
+          <th>KM</th>
+          <th>Income</th>
+          <th>Fuel</th>
+          <th>Commission</th>
+          <th>Profit</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="reportBody"></tbody>
+    </table>
+    </div>
+    </div>
+
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy
+}
+from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+
+/* =========================================================
+   FIREBASE CONFIG
+   ========================================================= */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA9a3daWU8CeZnhuv6CxgvT7PfhRj2rniI",
+  authDomain: "bike-part-time-profit-tracker.firebaseapp.com",
+  projectId: "bike-part-time-profit-tracker",
+  storageBucket: "bike-part-time-profit-tracker.firebasestorage.app",
+  messagingSenderId: "1084490450846",
+  appId: "1:1084490450846:web:7c245da665354ba4ed388f"
+};
+
+
+/* =========================================================
+   INITIALIZE FIREBASE
+   ========================================================= */
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+
+/* =========================================================
+   FIRESTORE COLLECTION
+   ========================================================= */
+
+const recordsCollection =
+  collection(db, "bikeJobRecords");
+
+
+let records = [];
+let editId = null;
+
+
+/* =========================================================
+   HTML ELEMENTS
+   ========================================================= */
+
+const dateEl =
+  document.getElementById('date');
+
+const platformEl =
+  document.getElementById('platform');
+
+const distanceEl =
+  document.getElementById('distance');
+
+const incomeEl =
+  document.getElementById('income');
+
+const fuelEl =
+  document.getElementById('fuel');
+
+const otherEl =
+  document.getElementById('other');
+
+const saveBtn =
+  document.getElementById('saveBtn');
+
+
+/* =========================================================
+   LOAD FIREBASE DATA IN REALTIME
+   ========================================================= */
+
+const recordsQuery =
+  query(
+    recordsCollection,
+    orderBy("date", "asc")
+  );
+
+
+onSnapshot(
+  recordsQuery,
+
+  (snapshot) => {
+
+    records = snapshot.docs.map(
+      documentSnapshot => ({
+
+        id: documentSnapshot.id,
+
+        ...documentSnapshot.data()
+
+      })
+    );
+
+
+    console.log(
+      "Firebase records:",
+      records
+    );
+
+
+    updateYearFilter();
+
+    renderReport();
+
+  },
+
+  (error) => {
+
+    console.error(
+      "Firebase error:",
+      error
+    );
+
+    alert(
+      "Firebase connection error:\n\n" +
+      error.message
+    );
+
+  }
+);
+
+
+/* =========================================================
+   CLEAR FORM
+   ========================================================= */
+
+function clearForm(){
+
+  editId = null;
+
+  dateEl.value = '';
+
+  platformEl.value = 'Rapido';
+
+  distanceEl.value = '';
+
+  incomeEl.value = '';
+
+  fuelEl.value = '';
+
+  otherEl.value = '';
+
+  saveBtn.textContent =
+    'Save Record';
+}
+
+
+/* =========================================================
+   YEAR FILTER
+   ========================================================= */
+
+function updateYearFilter(){
+
+  const yearSelect =
+    document.getElementById('yearFilter');
+
+
+  const years = [
+    ...new Set(
+
+      records
+
+        .filter(r => r.date)
+
+        .map(
+          r =>
+            new Date(r.date)
+            .getFullYear()
+        )
+
+    )
+
+  ].sort(
+    (a,b) => a-b
+  );
+
+
+  yearSelect.innerHTML = '';
+
+
+  const allOption =
+    document.createElement('option');
+
+  allOption.value = 'all';
+
+  allOption.textContent =
+    'All Years';
+
+  yearSelect.appendChild(
+    allOption
+  );
+
+
+  if(years.length === 0){
+
+    const currentYear =
+      new Date().getFullYear();
+
+
+    const option =
+      document.createElement('option');
+
+    option.value =
+      currentYear;
+
+    option.textContent =
+      currentYear;
+
+    yearSelect.appendChild(
+      option
+    );
+
+  }
+
+  else{
+
+    years.forEach(year => {
+
+      const option =
+        document.createElement('option');
+
+      option.value =
+        year;
+
+      option.textContent =
+        year;
+
+      yearSelect.appendChild(
+        option
+      );
+
+    });
+
+  }
+
+
+  yearSelect.value = 'all';
+
+}
+
+
+/* =========================================================
+   RENDER REPORT
+   ========================================================= */
+
+function renderReport(){
+
+  const tbody =
+    document.getElementById(
+      'reportBody'
+    );
+
+
+  tbody.innerHTML = '';
+
+
+  const yearValue =
+    document.getElementById(
+      'yearFilter'
+    ).value;
+
+
+  const monthValue =
+    document.getElementById(
+      'monthFilter'
+    ).value;
+
+
+  let totalIncome = 0;
+
+  let totalDistance = 0;
+
+  let totalFuel = 0;
+
+  let totalOther = 0;
+
+  let totalExpense = 0;
+
+  let netProfit = 0;
+
+
+  records
+
+    .filter(r => {
+
+      const d =
+        new Date(r.date);
+
+
+      const yearMatch =
+        yearValue === 'all' ||
+        d.getFullYear() ===
+        parseInt(
+          yearValue,
+          10
+        );
+
+
+      const monthMatch =
+        monthValue === 'all' ||
+        d.getMonth() ===
+        parseInt(
+          monthValue,
+          10
+        );
+
+
+      return (
+        yearMatch &&
+        monthMatch
+      );
+
+    })
+
+
+    .forEach(r => {
+
+      const income =
+        Number(r.income) || 0;
+
+      const fuel =
+        Number(r.fuel) || 0;
+
+      const other =
+        Number(r.other) || 0;
+
+      const distance =
+        Number(r.distance) || 0;
+
+
+      const profit =
+        income -
+        fuel -
+        other;
+
+
+      totalIncome += income;
+
+      totalDistance += distance;
+
+      totalFuel += fuel;
+
+      totalOther += other;
+
+      totalExpense +=
+        fuel + other;
+
+      netProfit += profit;
+
+
+      const tr =
+        document.createElement('tr');
+
+
+      tr.innerHTML = `
+
+        <td>
+          ${r.date}
+        </td>
+
+        <td>
+          ${r.platform}
+        </td>
+
+        <td>
+          ${distance.toFixed(1)}
+        </td>
+
+        <td>
+          ₹${income.toFixed(2)}
+        </td>
+
+        <td>
+          ₹${fuel.toFixed(2)}
+        </td>
+
+        <td>
+          ₹${other.toFixed(2)}
+        </td>
+
+        <td
+          class="${profit >= 0 ? 'profit' : 'loss'}">
+
+          ₹${profit.toFixed(2)}
+
+        </td>
+
+        <td>
+
+          <div class="row-actions">
+
+            <button
+              onclick="editRecord('${r.id}')">
+
+              Edit
+
+            </button>
+
+            <button
+              class="danger"
+              onclick="deleteRecord('${r.id}')">
+
+              Delete
+
+            </button>
+
+          </div>
+
+        </td>
+
+      `;
+
+
+      tbody.appendChild(tr);
+
+    });
+
+
+  /* =====================================================
+     UPDATE SUMMARY
+     ===================================================== */
+
+  document.getElementById(
+    'totalIncome'
+  ).textContent =
+    '₹' +
+    totalIncome.toFixed(2);
+
+
+  document.getElementById(
+    'totalFuel'
+  ).textContent =
+    '₹' +
+    totalFuel.toFixed(2);
+
+
+  document.getElementById(
+    'totalOther'
+  ).textContent =
+    '₹' +
+    totalOther.toFixed(2);
+
+
+  document.getElementById(
+    'totalExpense'
+  ).textContent =
+    '₹' +
+    totalExpense.toFixed(2);
+
+
+  document.getElementById(
+    'totalDistance'
+  ).textContent =
+    totalDistance.toFixed(1) +
+    ' KM';
+
+
+  const netProfitElement =
+    document.getElementById(
+      'netProfit'
+    );
+
+
+  netProfitElement.textContent =
+    '₹' +
+    netProfit.toFixed(2);
+
+
+  netProfitElement.className =
+    'value ' +
+    (
+      netProfit >= 0
+        ? 'profit'
+        : 'loss'
+    );
+
+
+  const percent =
+    totalIncome > 0
+      ? (
+          netProfit /
+          totalIncome
+        ) * 100
+      : 0;
+
+
+  const percentElement =
+    document.getElementById(
+      'netProfitPercent'
+    );
+
+
+  percentElement.textContent =
+    percent.toFixed(1) +
+    '%';
+
+
+  percentElement.className =
+    'value ' +
+    (
+      percent >= 0
+        ? 'profit'
+        : 'loss'
+    );
+
+}
+
+
+/* =========================================================
+   SAVE NEW / UPDATE EXISTING RECORD
+   ========================================================= */
+
+async function addOrUpdateRecord(){
+
+  const date =
+    dateEl.value;
+
+  const platform =
+    platformEl.value;
+
+  const distance =
+    parseFloat(
+      distanceEl.value || '0'
+    );
+
+  const income =
+    parseFloat(
+      incomeEl.value
+    );
+
+  const fuel =
+    parseFloat(
+      fuelEl.value
+    );
+
+  const other =
+    parseFloat(
+      otherEl.value || '0'
+    );
+
+
+  if(
+    !date ||
+    isNaN(income) ||
+    isNaN(fuel)
+  ){
+
+    alert(
+      'Please enter Date, Income and Fuel Expense.'
+    );
+
+    return;
+
+  }
+
+
+  const recordData = {
+
+    date: date,
+
+    platform: platform,
+
+    distance: distance,
+
+    income: income,
+
+    fuel: fuel,
+
+    other: other
+
+  };
+
+
+  try{
+
+    saveBtn.disabled = true;
+
+    saveBtn.textContent =
+      editId
+        ? 'Updating...'
+        : 'Saving...';
+
+
+    /* UPDATE */
+
+    if(editId){
+
+      const recordRef =
+        doc(
+          db,
+          "bikeJobRecords",
+          editId
+        );
+
+
+      await updateDoc(
+        recordRef,
+        recordData
+      );
+
+    }
+
+
+    /* NEW RECORD */
+
+    else{
+
+      await addDoc(
+        recordsCollection,
+        recordData
+      );
+
+    }
+
+
+    clearForm();
+
+  }
+
+  catch(error){
+
+    console.error(
+      error
+    );
+
+
+    alert(
+      "Firebase save error:\n\n" +
+      error.message
+    );
+
+  }
+
+  finally{
+
+    saveBtn.disabled = false;
+
+    saveBtn.textContent =
+      editId
+        ? 'Update Record'
+        : 'Save Record';
+
+  }
+
+}
+
+
+/* =========================================================
+   EDIT RECORD
+   ========================================================= */
+
+window.editRecord =
+  function(id){
+
+    const record =
+      records.find(
+        r => r.id === id
+      );
+
+
+    if(!record) return;
+
+
+    editId = id;
+
+
+    dateEl.value =
+      record.date || '';
+
+
+    platformEl.value =
+      record.platform ||
+      'Rapido';
+
+
+    distanceEl.value =
+      record.distance || 0;
+
+
+    incomeEl.value =
+      record.income || 0;
+
+
+    fuelEl.value =
+      record.fuel || 0;
+
+
+    otherEl.value =
+      record.other || 0;
+
+
+    saveBtn.textContent =
+      'Update Record';
+
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+
+  };
+
+
+/* =========================================================
+   DELETE RECORD
+   ========================================================= */
+
+window.deleteRecord =
+  async function(id){
+
+    if(
+      !confirm(
+        'Delete this record from Firebase?'
+      )
+    ){
+
+      return;
+
+    }
+
+
+    try{
+
+      await deleteDoc(
+        doc(
+          db,
+          "bikeJobRecords",
+          id
+        )
+      );
+
+
+      if(editId === id){
+
+        clearForm();
+
+      }
+
+    }
+
+    catch(error){
+
+      console.error(
+        error
+      );
+
+
+      alert(
+        "Firebase delete error:\n\n" +
+        error.message
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   CSV EXPORT
+   ========================================================= */
+
+function exportCSV(){
+
+  const yearValue =
+    document.getElementById(
+      'yearFilter'
+    ).value;
+
+
+  const monthValue =
+    document.getElementById(
+      'monthFilter'
+    ).value;
+
+
+  const rows =
+    records.filter(r => {
+
+      const d =
+        new Date(r.date);
+
+
+      const yearMatch =
+        yearValue === 'all' ||
+        d.getFullYear() ===
+        parseInt(
+          yearValue,
+          10
+        );
+
+
+      const monthMatch =
+        monthValue === 'all' ||
+        d.getMonth() ===
+        parseInt(
+          monthValue,
+          10
+        );
+
+
+      return (
+        yearMatch &&
+        monthMatch
+      );
+
+    });
+
+
+  let csv =
+    'Date,Platform,KM,Income,Fuel,Commission,Profit\n';
+
+
+  rows.forEach(r => {
+
+    const income =
+      Number(r.income) || 0;
+
+    const fuel =
+      Number(r.fuel) || 0;
+
+    const other =
+      Number(r.other) || 0;
+
+    const distance =
+      Number(r.distance) || 0;
+
+    const profit =
+      income -
+      fuel -
+      other;
+
+
+    csv +=
+      `"${r.date}","${r.platform}",${distance},${income},${fuel},${other},${profit}\n`;
+
+  });
+
+
+  const blob =
+    new Blob(
+      [csv],
+      {
+        type:
+          'text/csv;charset=utf-8;'
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  const a =
+    document.createElement('a');
+
+
+  const monthName =
+    document.getElementById(
+      'monthFilter'
+    )
+    .selectedOptions[0]
+    .text;
+
+
+  const yearName =
+    document.getElementById(
+      'yearFilter'
+    )
+    .selectedOptions[0]
+    .text;
+
+
+  a.href = url;
+
+
+  a.download =
+    `Bike_Profit_Report_${monthName}_${yearName}.csv`;
+
+
+  document.body.appendChild(a);
+
+  a.click();
+
+  a.remove();
+
+
+  URL.revokeObjectURL(
+    url
+  );
+
+}
+
+
+/* =========================================================
+   EVENT LISTENERS
+   ========================================================= */
+
+document
+  .getElementById('yearFilter')
+  .addEventListener(
+    'change',
+    renderReport
+  );
+
+
+document
+  .getElementById('monthFilter')
+  .addEventListener(
+    'change',
+    renderReport
+  );
+
+
+document
+  .getElementById('exportBtn')
+  .addEventListener(
+    'click',
+    exportCSV
+  );
+
+
+document
+  .getElementById('clearBtn')
+  .addEventListener(
+    'click',
+    clearForm
+  );
+
+
+saveBtn.addEventListener(
+  'click',
+  addOrUpdateRecord
+);
+
+
+document.getElementById(
+  'monthFilter'
+).value = 'all';
+
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(reg => console.log("PWA service worker registered:", reg.scope))
+      .catch(err => console.error("PWA service worker registration failed:", err));
+  });
+}
+</script>
+</body>
+</html>
