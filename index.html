@@ -305,6 +305,7 @@ tbody tr:hover{background:rgba(0,239,255,.035)}
 
 <div class="card">
     <h2>New Entry</h2>
+    <div id="editStatus" style="display:none;margin-bottom:12px;font-weight:600;">Editing existing record</div>
     <div class="grid">
       <div>
         <label>Date</label> 
@@ -467,6 +468,8 @@ function clearForm() {
   otherEl.value = "";
   endEl.setCustomValidity("");
   saveBtn.textContent = "Save Record";
+  const editStatus = document.getElementById("editStatus");
+  if (editStatus) editStatus.style.display = "none";
 }
 
 function updateYearFilter() {
@@ -536,9 +539,17 @@ function renderReport() {
   let totalExpense = 0;
   let netProfit = 0;
 
-  const filtered = records.filter(r =>
-    matchesFilter(r, yearValue, monthValue)
-  );
+  const filtered = records
+    .filter(r => matchesFilter(r, yearValue, monthValue))
+    .sort((a, b) => {
+      const dateCompare = String(b.date || "").localeCompare(String(a.date || ""));
+      if (dateCompare !== 0) return dateCompare;
+
+      // For same-date entries, newest created record first when available.
+      const aCreated = a.createdAt?.seconds ?? a.createdAt ?? 0;
+      const bCreated = b.createdAt?.seconds ?? b.createdAt ?? 0;
+      return Number(bCreated) - Number(aCreated);
+    });
 
   filtered.forEach(r => {
     const income = Number(r.income) || 0;
@@ -549,8 +560,8 @@ function renderReport() {
     // Profit = Income - Fuel Expense - Commission
     const profit = income - fuel - commission;
 
-    const startOdo = Number(r.starting ?? r.startOdo) || 0;
-    const endOdo = Number(r.end ?? r.endOdo) || 0;
+    const startOdo = Number(r.starting ?? r.startingOdo ?? r.startOdo ?? r.start) || 0;
+    const endOdo = Number(r.end ?? r.endOdo ?? r.endingOdo ?? r.finishOdo) || 0;
 
     let distance = Number(r.distance);
     if (!Number.isFinite(distance) || distance < 0) {
@@ -580,8 +591,8 @@ function renderReport() {
       <td class="${profit >= 0 ? "profit" : "loss"}">${money(profit)}</td>
       <td>
         <div class="row-actions">
-          <button type="button" onclick="editRecord('${r.id}')">Edit</button>
-          <button type="button" class="danger" onclick="deleteRecord('${r.id}')">Delete</button>
+          <button type="button" class="edit-row" data-id="${r.id}">Edit</button>
+          <button type="button" class="danger delete-row" data-id="${r.id}">Delete</button>
         </div>
       </td>
     `;
@@ -659,8 +670,13 @@ async function addOrUpdateRecord() {
   const recordData = {
     date,
     platform,
+    createdAt: editId
+      ? (records.find(r => r.id === editId)?.createdAt || Date.now())
+      : Date.now(),
     starting: startingOdo,
     end: endOdo,
+    startingOdo: startingOdo,
+    endOdo: endOdo,
     distance: Number(distance.toFixed(1)),
     income,
     fuelFillUp,
@@ -668,9 +684,11 @@ async function addOrUpdateRecord() {
     other: commission
   };
 
+  const wasEditing = Boolean(editId);
+
   try {
     saveBtn.disabled = true;
-    saveBtn.textContent = editId ? "Updating..." : "Saving...";
+    saveBtn.textContent = wasEditing ? "Updating..." : "Saving...";
 
     if (editId) {
       await updateDoc(
@@ -687,7 +705,7 @@ async function addOrUpdateRecord() {
     alert(`Firebase save error:\n\n${error.message}`);
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = editId ? "Update Record" : "Save Record";
+    saveBtn.textContent = wasEditing ? "Save Record" : "Save Record";
   }
 }
 
@@ -704,8 +722,8 @@ window.editRecord = function(id) {
   platformEl.value = record.platform || "Rapido";
 
   // Support both current and older field names.
-  startingEl.value = record.starting ?? record.startOdo ?? "";
-  endEl.value = record.end ?? record.endOdo ?? "";
+  startingEl.value = record.starting ?? record.startingOdo ?? record.startOdo ?? record.start ?? "";
+  endEl.value = record.end ?? record.endOdo ?? record.endingOdo ?? record.finishOdo ?? "";
 
   incomeEl.value = record.income ?? 0;
   fuelFillUpEl.value = record.fuelFillUp ?? 0;
@@ -715,8 +733,11 @@ window.editRecord = function(id) {
   calculateDistance();
 
   saveBtn.textContent = "Update Record";
+  const editStatus = document.getElementById("editStatus");
+  if (editStatus) editStatus.style.display = "block";
 
-  document.querySelector(".card h2")?.scrollIntoView({
+  const entryHeading = [...document.querySelectorAll("h2")].find(h => h.textContent.trim() === "New Entry");
+  entryHeading?.scrollIntoView({
     behavior: "smooth",
     block: "start"
   });
@@ -771,8 +792,8 @@ function exportCSV() {
     const profit = income - fuel - commission;
     const percent = income > 0 ? (profit / income) * 100 : 0;
 
-    const startOdo = Number(r.starting ?? r.startOdo) || 0;
-    const endOdo = Number(r.end ?? r.endOdo) || 0;
+    const startOdo = Number(r.starting ?? r.startingOdo ?? r.startOdo ?? r.start) || 0;
+    const endOdo = Number(r.end ?? r.endOdo ?? r.endingOdo ?? r.finishOdo) || 0;
 
     let distance = Number(r.distance);
     if (!Number.isFinite(distance) || distance < 0) {
@@ -837,6 +858,16 @@ document.getElementById("clearBtn")
   .addEventListener("click", clearForm);
 
 saveBtn.addEventListener("click", addOrUpdateRecord);
+document.getElementById("reportBody").addEventListener("click", event => {
+  const editButton = event.target.closest(".edit-row");
+  const deleteButton = event.target.closest(".delete-row");
+  if (editButton) {
+    window.editRecord(editButton.dataset.id);
+  } else if (deleteButton) {
+    window.deleteRecord(deleteButton.dataset.id);
+  }
+});
+
 
 document.getElementById("monthFilter").value = "all";
 setTodayDate();
