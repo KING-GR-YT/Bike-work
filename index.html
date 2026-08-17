@@ -75,7 +75,7 @@ h2{
 
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(0px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:13px;
 }
 
@@ -304,7 +304,7 @@ tbody tr:hover{background:rgba(0,239,255,.035)}
   </div>
 
 <div class="card">
-    <h2>Entry</h2>
+    <h2>New Entry</h2>
     <div class="grid">
       <div>
         <label>Date</label> 
@@ -318,17 +318,29 @@ tbody tr:hover{background:rgba(0,239,255,.035)}
           <option>Other</option>
         </select>
       </div>
+        <div>
+        <label>Starting ODO (KM)</label>
+        <input type="number" id="starting" placeholder="0">
+      </div>
+      <div>
+        <label>End ODO (KM)</label>
+        <input type="number" id="end" placeholder="0">
+      </div>
       <div>
         <label>Distance (KM)</label>
-        <input type="number" id="distance" placeholder="0">
+        <input type="number" id="distance" placeholder="Auto" readonly>
       </div>
       <div>
         <label>Income (₹)</label>
         <input type="number" id="income" placeholder="0">
       </div>
       <div>
+        <label>Fuel Fill Up (₹)</label>
+        <input type="number" id="fuelFillUp" placeholder="0" min="0" step="0.01">
+      </div>
+      <div>
         <label>Fuel Expense (₹)</label>
-        <input type="number" id="fuel" placeholder="0">
+        <input type="number" id="fuel" placeholder="0" min="0" step="0.01">
       </div>
       <div>
         <label>Commission (₹)</label>
@@ -341,15 +353,19 @@ tbody tr:hover{background:rgba(0,239,255,.035)}
     </div>
   </div>
       <div class="card">
+      <h2>Entry Table</h2>
       <div class="table-wrap">
     <table>
       <thead>
         <tr>
           <th>Date</th>
           <th>Platform</th>
+          <th>Starting ODO</th>
+          <th>End ODO</th>
           <th>KM</th>
           <th>Income</th>
-          <th>Fuel</th>
+          <th>Fuel Fill Up (₹)</th>
+          <th>Fuel Expense (₹)</th>
           <th>Commission</th>
           <th>Profit</th>
           <th>Actions</th>
@@ -362,9 +378,8 @@ tbody tr:hover{background:rgba(0,239,255,.035)}
 
 
 <script type="module">
-
 import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+  from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 
 import {
   getFirestore,
@@ -376,13 +391,7 @@ import {
   onSnapshot,
   query,
   orderBy
-}
-from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
-
-
-/* =========================================================
-   FIREBASE CONFIG
-   ========================================================= */
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA9a3daWU8CeZnhuv6CxgvT7PfhRj2rniI",
@@ -393,928 +402,466 @@ const firebaseConfig = {
   appId: "1:1084490450846:web:7c245da665354ba4ed388f"
 };
 
-
-/* =========================================================
-   INITIALIZE FIREBASE
-   ========================================================= */
-
 const app = initializeApp(firebaseConfig);
-
 const db = getFirestore(app);
-
-
-/* =========================================================
-   FIRESTORE COLLECTION
-   ========================================================= */
-
-const recordsCollection =
-  collection(db, "bikeJobRecords");
-
+const recordsCollection = collection(db, "bikeJobRecords");
 
 let records = [];
 let editId = null;
 
+const dateEl = document.getElementById("date");
+const platformEl = document.getElementById("platform");
+const startingEl = document.getElementById("starting");
+const endEl = document.getElementById("end");
+const distanceEl = document.getElementById("distance");
+const incomeEl = document.getElementById("income");
+const fuelFillUpEl = document.getElementById("fuelFillUp");
+const fuelEl = document.getElementById("fuel");
+const otherEl = document.getElementById("other");
+const saveBtn = document.getElementById("saveBtn");
 
-/* =========================================================
-   HTML ELEMENTS
-   ========================================================= */
+function setTodayDate() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  dateEl.value = `${yyyy}-${mm}-${dd}`;
+}
 
-const dateEl =
-  document.getElementById('date');
+function calculateDistance() {
+  const start = Number(startingEl.value);
+  const end = Number(endEl.value);
 
-const platformEl =
-  document.getElementById('platform');
-
-const distanceEl =
-  document.getElementById('distance');
-
-const incomeEl =
-  document.getElementById('income');
-
-const fuelEl =
-  document.getElementById('fuel');
-
-const otherEl =
-  document.getElementById('other');
-
-const saveBtn =
-  document.getElementById('saveBtn');
-
-
-/* =========================================================
-   LOAD FIREBASE DATA IN REALTIME
-   ========================================================= */
-
-const recordsQuery =
-  query(
-    recordsCollection,
-    orderBy("date", "asc")
-  );
-
-
-onSnapshot(
-  recordsQuery,
-
-  (snapshot) => {
-
-    records = snapshot.docs.map(
-      documentSnapshot => ({
-
-        id: documentSnapshot.id,
-
-        ...documentSnapshot.data()
-
-      })
-    );
-
-
-    console.log(
-      "Firebase records:",
-      records
-    );
-
-
-    updateYearFilter();
-
-    renderReport();
-
-  },
-
-  (error) => {
-
-    console.error(
-      "Firebase error:",
-      error
-    );
-
-    alert(
-      "Firebase connection error:\n\n" +
-      error.message
-    );
-
+  if (
+    startingEl.value !== "" &&
+    endEl.value !== "" &&
+    Number.isFinite(start) &&
+    Number.isFinite(end)
+  ) {
+    if (end >= start) {
+      distanceEl.value = (end - start).toFixed(1);
+      endEl.setCustomValidity("");
+    } else {
+      distanceEl.value = "";
+      endEl.setCustomValidity("End ODO cannot be less than Starting ODO.");
+    }
+  } else {
+    distanceEl.value = "";
+    endEl.setCustomValidity("");
   }
-);
+}
 
+startingEl.addEventListener("input", calculateDistance);
+endEl.addEventListener("input", calculateDistance);
 
-/* =========================================================
-   CLEAR FORM
-   ========================================================= */
-
-function clearForm(){
-
+function clearForm() {
   editId = null;
-
-  dateEl.value = '';
-
-  platformEl.value = 'Rapido';
-
-  distanceEl.value = '';
-
-  incomeEl.value = '';
-
-  fuelEl.value = '';
-
-  otherEl.value = '';
-
-  saveBtn.textContent =
-    'Save Record';
+  setTodayDate();
+  platformEl.value = "Rapido";
+  startingEl.value = "";
+  endEl.value = "";
+  distanceEl.value = "";
+  incomeEl.value = "";
+  fuelFillUpEl.value = "";
+  fuelEl.value = "";
+  otherEl.value = "";
+  endEl.setCustomValidity("");
+  saveBtn.textContent = "Save Record";
 }
 
-
-/* =========================================================
-   YEAR FILTER
-   ========================================================= */
-
-function updateYearFilter(){
-
-  const yearSelect =
-    document.getElementById('yearFilter');
-
-
-  const years = [
-    ...new Set(
-
-      records
-
-        .filter(r => r.date)
-
-        .map(
-          r =>
-            new Date(r.date)
-            .getFullYear()
-        )
-
-    )
-
-  ].sort(
-    (a,b) => a-b
-  );
-
-
-  yearSelect.innerHTML = '';
-
-
-  const allOption =
-    document.createElement('option');
-
-  allOption.value = 'all';
-
-  allOption.textContent =
-    'All Years';
-
-  yearSelect.appendChild(
-    allOption
-  );
-
-
-  if(years.length === 0){
-
-    const currentYear =
-      new Date().getFullYear();
-
-
-    const option =
-      document.createElement('option');
-
-    option.value =
-      currentYear;
-
-    option.textContent =
-      currentYear;
-
-    yearSelect.appendChild(
-      option
-    );
-
-  }
-
-  else{
-
-    years.forEach(year => {
-
-      const option =
-        document.createElement('option');
-
-      option.value =
-        year;
-
-      option.textContent =
-        year;
-
-      yearSelect.appendChild(
-        option
-      );
-
-    });
-
-  }
-
-
-  yearSelect.value = 'all';
-
-}
-
-
-/* =========================================================
-   RENDER REPORT
-   ========================================================= */
-
-function renderReport(){
-
-  const tbody =
-    document.getElementById(
-      'reportBody'
-    );
-
-
-  tbody.innerHTML = '';
-
-
-  const yearValue =
-    document.getElementById(
-      'yearFilter'
-    ).value;
-
-
-  const monthValue =
-    document.getElementById(
-      'monthFilter'
-    ).value;
-
-
-  let totalIncome = 0;
-
-  let totalDistance = 0;
-
-  let totalFuel = 0;
-
-  let totalOther = 0;
-
-  let totalExpense = 0;
-
-  let netProfit = 0;
-
-
-  records
-
-    .filter(r => {
-
-      const d =
-        new Date(r.date);
-
-
-      const yearMatch =
-        yearValue === 'all' ||
-        d.getFullYear() ===
-        parseInt(
-          yearValue,
-          10
-        );
-
-
-      const monthMatch =
-        monthValue === 'all' ||
-        d.getMonth() ===
-        parseInt(
-          monthValue,
-          10
-        );
-
-
-      return (
-        yearMatch &&
-        monthMatch
-      );
-
-    })
-
-
-    .forEach(r => {
-
-      const income =
-        Number(r.income) || 0;
-
-      const fuel =
-        Number(r.fuel) || 0;
-
-      const other =
-        Number(r.other) || 0;
-
-      const distance =
-        Number(r.distance) || 0;
-
-
-      const profit =
-        income -
-        fuel -
-        other;
-
-
-      totalIncome += income;
-
-      totalDistance += distance;
-
-      totalFuel += fuel;
-
-      totalOther += other;
-
-      totalExpense +=
-        fuel + other;
-
-      netProfit += profit;
-
-
-      const tr =
-        document.createElement('tr');
-
-
-      tr.innerHTML = `
-
-        <td>
-          ${r.date}
-        </td>
-
-        <td>
-          ${r.platform}
-        </td>
-
-        <td>
-          ${distance.toFixed(1)}
-        </td>
-
-        <td>
-          ₹${income.toFixed(2)}
-        </td>
-
-        <td>
-          ₹${fuel.toFixed(2)}
-        </td>
-
-        <td>
-          ₹${other.toFixed(2)}
-        </td>
-
-        <td
-          class="${profit >= 0 ? 'profit' : 'loss'}">
-
-          ₹${profit.toFixed(2)}
-
-        </td>
-
-        <td>
-
-          <div class="row-actions">
-
-            <button
-              onclick="editRecord('${r.id}')">
-
-              Edit
-
-            </button>
-
-            <button
-              class="danger"
-              onclick="deleteRecord('${r.id}')">
-
-              Delete
-
-            </button>
-
-          </div>
-
-        </td>
-
-      `;
-
-
-      tbody.appendChild(tr);
-
-    });
-
-
-  /* =====================================================
-     UPDATE SUMMARY
-     ===================================================== */
-
-  document.getElementById(
-    'totalIncome'
-  ).textContent =
-    '₹' +
-    totalIncome.toFixed(2);
-
-
-  document.getElementById(
-    'totalFuel'
-  ).textContent =
-    '₹' +
-    totalFuel.toFixed(2);
-
-
-  document.getElementById(
-    'totalOther'
-  ).textContent =
-    '₹' +
-    totalOther.toFixed(2);
-
-
-  document.getElementById(
-    'totalExpense'
-  ).textContent =
-    '₹' +
-    totalExpense.toFixed(2);
-
-
-  document.getElementById(
-    'totalDistance'
-  ).textContent =
-    totalDistance.toFixed(1) +
-    ' KM';
-
-
-  const netProfitElement =
-    document.getElementById(
-      'netProfit'
-    );
-
-
-  netProfitElement.textContent =
-    '₹' +
-    netProfit.toFixed(2);
-
-
-  netProfitElement.className =
-    'value ' +
-    (
-      netProfit >= 0
-        ? 'profit'
-        : 'loss'
-    );
-
-
-  const percent =
-    totalIncome > 0
-      ? (
-          netProfit /
-          totalIncome
-        ) * 100
-      : 0;
-
-
-  const percentElement =
-    document.getElementById(
-      'netProfitPercent'
-    );
-
-
-  percentElement.textContent =
-    percent.toFixed(1) +
-    '%';
-
-
-  percentElement.className =
-    'value ' +
-    (
-      percent >= 0
-        ? 'profit'
-        : 'loss'
-    );
-
-}
-
-
-/* =========================================================
-   SAVE NEW / UPDATE EXISTING RECORD
-   ========================================================= */
-
-async function addOrUpdateRecord(){
-
-  const date =
-    dateEl.value;
-
-  const platform =
-    platformEl.value;
-
-  const distance =
-    parseFloat(
-      distanceEl.value || '0'
-    );
-
-  const income =
-    parseFloat(
-      incomeEl.value
-    );
-
-  const fuel =
-    parseFloat(
-      fuelEl.value
-    );
-
-  const other =
-    parseFloat(
-      otherEl.value || '0'
-    );
-
-
-  if(
-    !date ||
-    isNaN(income) ||
-    isNaN(fuel)
-  ){
-
-    alert(
-      'Please enter Date, Income and Fuel Expense.'
-    );
-
-    return;
-
-  }
-
-
-  const recordData = {
-
-    date: date,
-
-    platform: platform,
-
-    distance: distance,
-
-    income: income,
-
-    fuel: fuel,
-
-    other: other
-
-  };
-
-
-  try{
-
-    saveBtn.disabled = true;
-
-    saveBtn.textContent =
-      editId
-        ? 'Updating...'
-        : 'Saving...';
-
-
-    /* UPDATE */
-
-    if(editId){
-
-      const recordRef =
-        doc(
-          db,
-          "bikeJobRecords",
-          editId
-        );
-
-
-      await updateDoc(
-        recordRef,
-        recordData
-      );
-
-    }
-
-
-    /* NEW RECORD */
-
-    else{
-
-      await addDoc(
-        recordsCollection,
-        recordData
-      );
-
-    }
-
-
-    clearForm();
-
-  }
-
-  catch(error){
-
-    console.error(
-      error
-    );
-
-
-    alert(
-      "Firebase save error:\n\n" +
-      error.message
-    );
-
-  }
-
-  finally{
-
-    saveBtn.disabled = false;
-
-    saveBtn.textContent =
-      editId
-        ? 'Update Record'
-        : 'Save Record';
-
-  }
-
-}
-
-
-/* =========================================================
-   EDIT RECORD
-   ========================================================= */
-
-window.editRecord =
-  function(id){
-
-    const record =
-      records.find(
-        r => r.id === id
-      );
-
-
-    if(!record) return;
-
-
-    editId = id;
-
-
-    dateEl.value =
-      record.date || '';
-
-
-    platformEl.value =
-      record.platform ||
-      'Rapido';
-
-
-    distanceEl.value =
-      record.distance || 0;
-
-
-    incomeEl.value =
-      record.income || 0;
-
-
-    fuelEl.value =
-      record.fuel || 0;
-
-
-    otherEl.value =
-      record.other || 0;
-
-
-    saveBtn.textContent =
-      'Update Record';
-
-
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-
-  };
-
-
-/* =========================================================
-   DELETE RECORD
-   ========================================================= */
-
-window.deleteRecord =
-  async function(id){
-
-    if(
-      !confirm(
-        'Delete this record from Firebase?'
-      )
-    ){
-
-      return;
-
-    }
-
-
-    try{
-
-      await deleteDoc(
-        doc(
-          db,
-          "bikeJobRecords",
-          id
-        )
-      );
-
-
-      if(editId === id){
-
-        clearForm();
-
-      }
-
-    }
-
-    catch(error){
-
-      console.error(
-        error
-      );
-
-
-      alert(
-        "Firebase delete error:\n\n" +
-        error.message
-      );
-
-    }
-
-  };
-
-
-/* =========================================================
-   CSV EXPORT
-   ========================================================= */
-
-function exportCSV(){
-
-  const yearValue =
-    document.getElementById(
-      'yearFilter'
-    ).value;
-
-
-  const monthValue =
-    document.getElementById(
-      'monthFilter'
-    ).value;
-
-
-  const rows =
-    records.filter(r => {
-
-      const d =
-        new Date(r.date);
-
-
-      const yearMatch =
-        yearValue === 'all' ||
-        d.getFullYear() ===
-        parseInt(
-          yearValue,
-          10
-        );
-
-
-      const monthMatch =
-        monthValue === 'all' ||
-        d.getMonth() ===
-        parseInt(
-          monthValue,
-          10
-        );
-
-
-      return (
-        yearMatch &&
-        monthMatch
-      );
-
-    });
-
-
-  let csv =
-    'Date,Platform,KM,Income,Fuel,Commission,Profit\n';
-
-
-  rows.forEach(r => {
-
-    const income =
-      Number(r.income) || 0;
-
-    const fuel =
-      Number(r.fuel) || 0;
-
-    const other =
-      Number(r.other) || 0;
-
-    const distance =
-      Number(r.distance) || 0;
-
-    const profit =
-      income -
-      fuel -
-      other;
-
-
-    csv +=
-      `"${r.date}","${r.platform}",${distance},${income},${fuel},${other},${profit}\n`;
-
+function updateYearFilter() {
+  const yearSelect = document.getElementById("yearFilter");
+  const currentValue = yearSelect.value;
+
+  const years = [...new Set(
+    records
+      .filter(r => r.date)
+      .map(r => Number(String(r.date).slice(0, 4)))
+      .filter(Number.isFinite)
+  )].sort((a, b) => a - b);
+
+  yearSelect.innerHTML = "";
+
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = "All Years";
+  yearSelect.appendChild(allOption);
+
+  years.forEach(year => {
+    const option = document.createElement("option");
+    option.value = String(year);
+    option.textContent = String(year);
+    yearSelect.appendChild(option);
   });
 
+  if (currentValue === "all" || years.includes(Number(currentValue))) {
+    yearSelect.value = currentValue || "all";
+  } else {
+    yearSelect.value = "all";
+  }
+}
 
-  const blob =
-    new Blob(
-      [csv],
-      {
-        type:
-          'text/csv;charset=utf-8;'
-      }
-    );
+function matchesFilter(r, yearValue, monthValue) {
+  if (!r.date) return false;
 
+  // Parse YYYY-MM-DD without timezone shifting.
+  const parts = String(r.date).split("-");
+  const year = Number(parts[0]);
+  const month = Number(parts[1]) - 1;
 
-  const url =
-    URL.createObjectURL(
-      blob
-    );
+  const yearMatch =
+    yearValue === "all" || year === Number(yearValue);
 
+  const monthMatch =
+    monthValue === "all" || month === Number(monthValue);
 
-  const a =
-    document.createElement('a');
+  return yearMatch && monthMatch;
+}
 
+function money(value) {
+  return `₹${(Number(value) || 0).toFixed(2)}`;
+}
+
+function renderReport() {
+  const tbody = document.getElementById("reportBody");
+  tbody.innerHTML = "";
+
+  const yearValue = document.getElementById("yearFilter").value;
+  const monthValue = document.getElementById("monthFilter").value;
+
+  let totalIncome = 0;
+  let totalDistance = 0;
+  let totalFuel = 0;
+  let totalCommission = 0;
+  let totalExpense = 0;
+  let netProfit = 0;
+
+  const filtered = records.filter(r =>
+    matchesFilter(r, yearValue, monthValue)
+  );
+
+  filtered.forEach(r => {
+    const income = Number(r.income) || 0;
+    const fuel = Number(r.fuel) || 0;
+    const commission = Number(r.other) || 0;
+
+    // Required formula:
+    // Profit = Income - Fuel Expense - Commission
+    const profit = income - fuel - commission;
+
+    const startOdo = Number(r.starting ?? r.startOdo) || 0;
+    const endOdo = Number(r.end ?? r.endOdo) || 0;
+
+    let distance = Number(r.distance);
+    if (!Number.isFinite(distance) || distance < 0) {
+      distance = endOdo >= startOdo ? endOdo - startOdo : 0;
+    }
+
+    const fuelFillUp = Number(r.fuelFillUp) || 0;
+
+    totalIncome += income;
+    totalDistance += distance;
+    totalFuel += fuel;
+    totalCommission += commission;
+    totalExpense += fuel + commission;
+    netProfit += profit;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.date || ""}</td>
+      <td>${r.platform || ""}</td>
+      <td>${startOdo.toFixed(1)}</td>
+      <td>${endOdo.toFixed(1)}</td>
+      <td>${distance.toFixed(1)}</td>
+      <td>${money(income)}</td>
+      <td>${money(fuelFillUp)}</td>
+      <td>${money(fuel)}</td>
+      <td>${money(commission)}</td>
+      <td class="${profit >= 0 ? "profit" : "loss"}">${money(profit)}</td>
+      <td>
+        <div class="row-actions">
+          <button type="button" onclick="editRecord('${r.id}')">Edit</button>
+          <button type="button" class="danger" onclick="deleteRecord('${r.id}')">Delete</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("totalIncome").textContent = money(totalIncome);
+  document.getElementById("totalFuel").textContent = money(totalFuel);
+  document.getElementById("totalOther").textContent = money(totalCommission);
+  document.getElementById("totalExpense").textContent = money(totalExpense);
+  document.getElementById("totalDistance").textContent =
+    `${totalDistance.toFixed(1)} KM`;
+
+  const netProfitEl = document.getElementById("netProfit");
+  netProfitEl.textContent = money(netProfit);
+  netProfitEl.className = `value ${netProfit >= 0 ? "profit" : "loss"}`;
+
+  const percent = totalIncome > 0
+    ? (netProfit / totalIncome) * 100
+    : 0;
+
+  const percentEl = document.getElementById("netProfitPercent");
+  percentEl.textContent = `${percent.toFixed(1)}%`;
+  percentEl.className = `value ${percent >= 0 ? "profit" : "loss"}`;
+}
+
+async function addOrUpdateRecord() {
+  calculateDistance();
+
+  const date = dateEl.value;
+  const platform = platformEl.value;
+  const startingOdo = Number(startingEl.value);
+  const endOdo = Number(endEl.value);
+  const distance = Number(distanceEl.value);
+  const income = Number(incomeEl.value);
+  const fuelFillUp = Number(fuelFillUpEl.value) || 0;
+  const fuel = Number(fuelEl.value);
+  const commission = Number(otherEl.value) || 0;
+
+  if (!date) {
+    alert("Please select Date.");
+    return;
+  }
+
+  if (!Number.isFinite(startingOdo) || startingOdo < 0) {
+    alert("Please enter Starting ODO.");
+    startingEl.focus();
+    return;
+  }
+
+  if (!Number.isFinite(endOdo) || endOdo < 0) {
+    alert("Please enter End ODO.");
+    endEl.focus();
+    return;
+  }
+
+  if (endOdo < startingOdo) {
+    alert("End ODO cannot be less than Starting ODO.");
+    endEl.focus();
+    return;
+  }
+
+  if (!Number.isFinite(income) || income < 0) {
+    alert("Please enter Income.");
+    incomeEl.focus();
+    return;
+  }
+
+  if (!Number.isFinite(fuel) || fuel < 0) {
+    alert("Please enter Fuel Expense.");
+    fuelEl.focus();
+    return;
+  }
+
+  const recordData = {
+    date,
+    platform,
+    starting: startingOdo,
+    end: endOdo,
+    distance: Number(distance.toFixed(1)),
+    income,
+    fuelFillUp,
+    fuel,
+    other: commission
+  };
+
+  try {
+    saveBtn.disabled = true;
+    saveBtn.textContent = editId ? "Updating..." : "Saving...";
+
+    if (editId) {
+      await updateDoc(
+        doc(db, "bikeJobRecords", editId),
+        recordData
+      );
+    } else {
+      await addDoc(recordsCollection, recordData);
+    }
+
+    clearForm();
+  } catch (error) {
+    console.error(error);
+    alert(`Firebase save error:\n\n${error.message}`);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = editId ? "Update Record" : "Save Record";
+  }
+}
+
+window.editRecord = function(id) {
+  const record = records.find(r => r.id === id);
+  if (!record) {
+    alert("Record not found.");
+    return;
+  }
+
+  editId = id;
+
+  dateEl.value = record.date || "";
+  platformEl.value = record.platform || "Rapido";
+
+  // Support both current and older field names.
+  startingEl.value = record.starting ?? record.startOdo ?? "";
+  endEl.value = record.end ?? record.endOdo ?? "";
+
+  incomeEl.value = record.income ?? 0;
+  fuelFillUpEl.value = record.fuelFillUp ?? 0;
+  fuelEl.value = record.fuel ?? 0;
+  otherEl.value = record.other ?? 0;
+
+  calculateDistance();
+
+  saveBtn.textContent = "Update Record";
+
+  document.querySelector(".card h2")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+};
+
+window.deleteRecord = async function(id) {
+  if (!confirm("Delete this record from Firebase?")) return;
+
+  try {
+    await deleteDoc(doc(db, "bikeJobRecords", id));
+
+    if (editId === id) {
+      clearForm();
+    }
+  } catch (error) {
+    console.error(error);
+    alert(`Firebase delete error:\n\n${error.message}`);
+  }
+};
+
+function csvEscape(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+function exportCSV() {
+  const yearValue = document.getElementById("yearFilter").value;
+  const monthValue = document.getElementById("monthFilter").value;
+
+  const rows = records.filter(r =>
+    matchesFilter(r, yearValue, monthValue)
+  );
+
+  const csvRows = [[
+    "Date",
+    "Platform",
+    "Starting ODO",
+    "End ODO",
+    "KM",
+    "Income",
+    "Fuel Fill Up (₹)",
+    "Fuel Expense (₹)",
+    "Commission (₹)",
+    "Profit (₹)",
+    "Net Profit %"
+  ]];
+
+  rows.forEach(r => {
+    const income = Number(r.income) || 0;
+    const fuelFillUp = Number(r.fuelFillUp) || 0;
+    const fuel = Number(r.fuel) || 0;
+    const commission = Number(r.other) || 0;
+    const profit = income - fuel - commission;
+    const percent = income > 0 ? (profit / income) * 100 : 0;
+
+    const startOdo = Number(r.starting ?? r.startOdo) || 0;
+    const endOdo = Number(r.end ?? r.endOdo) || 0;
+
+    let distance = Number(r.distance);
+    if (!Number.isFinite(distance) || distance < 0) {
+      distance = endOdo >= startOdo ? endOdo - startOdo : 0;
+    }
+
+    csvRows.push([
+      r.date,
+      r.platform,
+      startOdo,
+      endOdo,
+      distance,
+      income,
+      fuelFillUp,
+      fuel,
+      commission,
+      profit,
+      `${percent.toFixed(1)}%`
+    ]);
+  });
+
+  const csv = csvRows
+    .map(row => row.map(csvEscape).join(","))
+    .join("\n");
+
+  const blob = new Blob(
+    ["\uFEFF" + csv],
+    { type: "text/csv;charset=utf-8;" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
 
   const monthName =
-    document.getElementById(
-      'monthFilter'
-    )
-    .selectedOptions[0]
-    .text;
-
+    document.getElementById("monthFilter")
+      .selectedOptions[0]?.text || "All_Months";
 
   const yearName =
-    document.getElementById(
-      'yearFilter'
-    )
-    .selectedOptions[0]
-    .text;
-
+    document.getElementById("yearFilter")
+      .selectedOptions[0]?.text || "All_Years";
 
   a.href = url;
-
-
   a.download =
     `Bike_Profit_Report_${monthName}_${yearName}.csv`;
 
-
   document.body.appendChild(a);
-
   a.click();
-
   a.remove();
-
-
-  URL.revokeObjectURL(
-    url
-  );
-
+  URL.revokeObjectURL(url);
 }
 
+document.getElementById("yearFilter")
+  .addEventListener("change", renderReport);
 
-/* =========================================================
-   EVENT LISTENERS
-   ========================================================= */
+document.getElementById("monthFilter")
+  .addEventListener("change", renderReport);
 
-document
-  .getElementById('yearFilter')
-  .addEventListener(
-    'change',
-    renderReport
-  );
+document.getElementById("exportBtn")
+  .addEventListener("click", exportCSV);
 
+document.getElementById("clearBtn")
+  .addEventListener("click", clearForm);
 
-document
-  .getElementById('monthFilter')
-  .addEventListener(
-    'change',
-    renderReport
-  );
+saveBtn.addEventListener("click", addOrUpdateRecord);
 
+document.getElementById("monthFilter").value = "all";
+setTodayDate();
 
-document
-  .getElementById('exportBtn')
-  .addEventListener(
-    'click',
-    exportCSV
-  );
-
-
-document
-  .getElementById('clearBtn')
-  .addEventListener(
-    'click',
-    clearForm
-  );
-
-
-saveBtn.addEventListener(
-  'click',
-  addOrUpdateRecord
+const recordsQuery = query(
+  recordsCollection,
+  orderBy("date", "asc")
 );
 
+onSnapshot(
+  recordsQuery,
+  snapshot => {
+    records = snapshot.docs.map(ds => ({
+      id: ds.id,
+      ...ds.data()
+    }));
 
-document.getElementById(
-  'monthFilter'
-).value = 'all';
-
+    updateYearFilter();
+    renderReport();
+  },
+  error => {
+    console.error("Firebase error:", error);
+    alert(`Firebase connection error:\n\n${error.message}`);
+  }
+);
 </script>
 
 <script>
