@@ -261,6 +261,10 @@ tbody tr:hover{background:rgba(0,239,255,.035)}
         <div class="label">Fuel Expense</div>
         <div class="value" id="totalFuel">₹0</div>
       </div>
+        <div class="item">
+          <div class="label">Pending Fuel Fill Up</div>
+          <div class="value profit" id="totalFuelAfterFillUp">₹0.00</div>
+        </div>
       <div class="item">
         <div class="label">Commission</div>
         <div class="value" id="totalOther">₹0</div>
@@ -535,6 +539,7 @@ function renderReport() {
   let totalIncome = 0;
   let totalDistance = 0;
   let totalFuel = 0;
+  let totalFuelFillUp = 0;
   let totalCommission = 0;
   let totalExpense = 0;
   let netProfit = 0;
@@ -570,6 +575,8 @@ function renderReport() {
 
     const fuelFillUp = Number(r.fuelFillUp) || 0;
 
+    totalFuelFillUp += fuelFillUp;
+
     totalIncome += income;
     totalDistance += distance;
     totalFuel += fuel;
@@ -601,6 +608,12 @@ function renderReport() {
 
   document.getElementById("totalIncome").textContent = money(totalIncome);
   document.getElementById("totalFuel").textContent = money(totalFuel);
+
+  // "Pending Fuel Fill Up" = Fuel Expense - Fuel Fill Up
+  const pendingFuelFillUp = totalFuel - totalFuelFillUp;
+document.getElementById("totalFuelAfterFillUp").textContent =
+  money(pendingFuelFillUp);
+
   document.getElementById("totalOther").textContent = money(totalCommission);
   document.getElementById("totalExpense").textContent = money(totalExpense);
   document.getElementById("totalDistance").textContent =
