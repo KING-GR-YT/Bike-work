@@ -190,8 +190,27 @@ tbody tr:hover{background:rgba(0,239,255,.035)}
   font-weight:700;
 }
 
+/* ===== PROFIT / LOSS STYLING ===== */
 .profit{color:var(--green)!important}
 .loss{color:var(--red)!important}
+
+/* Pending Fuel Fill Up automatically uses Profit/Loss styling */
+#totalFuelAfterFillUp{
+  font-family:'Orbitron',monospace;
+  font-size:20px;
+  font-weight:700;
+  transition:color .2s ease, text-shadow .2s ease;
+}
+
+#totalFuelAfterFillUp.profit{
+  color:var(--green)!important;
+  text-shadow:0 0 10px rgba(0,255,157,.35);
+}
+
+#totalFuelAfterFillUp.loss{
+  color:var(--red)!important;
+  text-shadow:0 0 10px rgba(255,64,72,.35);
+}
 
 .row-actions{display:flex;gap:6px}
 .row-actions button{padding:8px 10px;font-size:12px;border-radius:9px;min-width:62px}
@@ -612,8 +631,13 @@ function renderReport() {
 
   // "Pending Fuel Fill Up" = Fuel Expense - Fuel Fill Up
   const pendingFuelFillUp = totalFuel - totalFuelFillUp;
-document.getElementById("totalFuelAfterFillUp").textContent =
-  money(pendingFuelFillUp);
+  const pendingFuelEl = document.getElementById("totalFuelAfterFillUp");
+
+  pendingFuelEl.textContent = money(pendingFuelFillUp);
+
+  // Positive = Profit style (green), Negative = Loss style (red)
+  pendingFuelEl.className =
+    `value ${pendingFuelFillUp >= 0 ? "profit" : "loss"}`;
 
   document.getElementById("totalOther").textContent = money(totalCommission);
   document.getElementById("totalExpense").textContent = money(totalExpense);
