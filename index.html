@@ -499,7 +499,6 @@ function clearForm() {
 
 function updateYearFilter() {
   const yearSelect = document.getElementById("yearFilter");
-  const currentValue = yearSelect.value;
 
   const years = [...new Set(
     records
@@ -510,11 +509,13 @@ function updateYearFilter() {
 
   yearSelect.innerHTML = "";
 
+  // All Years
   const allOption = document.createElement("option");
   allOption.value = "all";
   allOption.textContent = "All Years";
   yearSelect.appendChild(allOption);
 
+  // Available years
   years.forEach(year => {
     const option = document.createElement("option");
     option.value = String(year);
@@ -522,8 +523,11 @@ function updateYearFilter() {
     yearSelect.appendChild(option);
   });
 
-  if (currentValue === "all" || years.includes(Number(currentValue))) {
-    yearSelect.value = currentValue || "all";
+  // ALWAYS select current year
+  const currentYear = new Date().getFullYear();
+
+  if (years.includes(currentYear)) {
+    yearSelect.value = String(currentYear);
   } else {
     yearSelect.value = "all";
   }
@@ -907,8 +911,10 @@ document.getElementById("reportBody").addEventListener("click", event => {
   }
 });
 
+// Auto-select current month
+document.getElementById("monthFilter").value =
+  String(new Date().getMonth());
 
-document.getElementById("monthFilter").value = "all";
 setTodayDate();
 
 const recordsQuery = query(
@@ -924,8 +930,13 @@ onSnapshot(
       ...ds.data()
     }));
 
-    updateYearFilter();
-    renderReport();
+updateYearFilter();
+
+// Always select current month
+document.getElementById("monthFilter").value =
+  String(new Date().getMonth());
+
+renderReport();
   },
   error => {
     console.error("Firebase error:", error);
