@@ -908,8 +908,8 @@ document.getElementById("reportBody").addEventListener("click", event => {
 });
 
 
-document.getElementById("monthFilter").value = String(new Date().getMonth());                                                                                    |
-| setTodayDate();
+document.getElementById("monthFilter").value = "all";
+setTodayDate();
 
 const recordsQuery = query(
   recordsCollection,
